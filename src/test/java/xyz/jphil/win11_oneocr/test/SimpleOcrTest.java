@@ -1,8 +1,5 @@
 package xyz.jphil.win11_oneocr.test;
 
-import xyz.jphil.win11_oneocr.OcrResult;
-import xyz.jphil.win11_oneocr.OcrLine;
-import xyz.jphil.win11_oneocr.OneOcrApi;
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;

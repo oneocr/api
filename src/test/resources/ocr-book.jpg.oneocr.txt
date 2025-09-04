@@ -1,0 +1,105 @@
+book.jpg
+x64 Native Tools Command PI
+x
++
+2.4 实战案例:为Linux版 Avast 编写 Python binding
+27
+Q:\write-code\ocr>ocr.exe book. jpg
+#t/usr/bin/python
+OCR model loaded ...
+import socket
+Running ocr pipeline ...
+SOCKET_PATH ="/var/run/avast/ncan.nock'
+Recognize 62 lines
+class CBasicAvastClienti
+00: 2.4
+det _init_(self, socket_name)
+selt.socket_name = socket_name
+01:实战案例:为Linux版Avast编写Python binding
+self.s - None
+02: 27
+def connect (self):
+03: #!/usr/bin/python
+gelf.s = socket.socket (socket.AF_UNIX, socket.SOCK_STREAM)
+self.s.connect(self.socket_name)
+04: import socket
+banner = selt.s.recv(1024)
+05: SOCKET_PATH = "/var/run/avast/scan.sock"
+return repr (banner)
+06: class CBasicAvastClient:
+def close(self):
+self.s.send("QUIT\n")
+07: def init_(self, socket_name):
+def main():
+08: self.socket_name = socket_name
+cli = CBasicAvastClient (SOCKET_PATH)
+09: self.s = None
+print (cli.connect ())
+cli.close()
+10: def connect (self) :
+11: self.s= socket. socket (socket.AF_UNIX, socket. SOCK_STREA
+if _name
+== _main ":
+main ()
+12: self.s.connect(self.socket_name)
+试着运行一下脚本:
+13: banner = self.s.recv(1024)
+$ python basic_avast_clil.py
+14: return repr (banner)
+'220 DAEMON\rin'
+15: def close(self):
+一切工作正常。编写的程序成功连接到了后台服务器,接着又成功关闭了连接。接下来
+16: self.s.send("QUIT\n")
+们要深入探索更多的命令,而其中最有意思的一个是:分析样本文件或目录的命令。
+17: def main():
+在地址0x0804083B处,有一次有趣的函数调用过程:
+18: cli = CBasicAvastClient (SOCKET_PATH)
+19: print(cli.connect())
+.text:08048D34
+mov
+edx, [ebx+esi*4]
+.text: 08048D37
+eax, [esp+0BCh+socket]
+20: cli.close ()
+mOv
+.text : 08048D3B
+cal
+scan path
+21: if
+因为有部分调试符号的帮助,我们可以轻而易举地确定这个函数的功能:扫描一个指定
+22:
+_name
+接下来,让我们来看看scan_path函数:
+23:
+== "main ":
+24: main()
+.text: 08049F00 scan_path
+proc near
+: CODE XREF: main+40B
+25:试着运行一下脚本:
+.text:08049F00
+; .text:08049EF1
+.text: 08049F00
+26: $ python basic_avast_clil.py
+.text: 08049F00 name
+= dword ptr -103Ch
+27: '220 DAEMON\r\n'
+text: 08049F00 resolved
+= dword ptr -1038h
+28:
+一切工作正常。编写的程序成功连接到了后台服务器,接着又成I
+.text:08049F00 n
+= dword ptr -1034h
+.text: 08049F00 var_1030
+= dword ptr -1030h
+29:们要深入探索更多的命令,而其中最有意思的一个是:分析样本文
+text:08049F00 var_102C
+= dword ptr -102Ch
+30:在地址0x0804083B处,有一次有趣的函数调用过程:
+text: 08049F00 var_1028
+= dword ptr -1028h
+31: .text: 08048D34
+.text: 08049F00 var_1024
+= dword ptr -1024h
+32: mov
+33: edx, [ebx+esi*4]

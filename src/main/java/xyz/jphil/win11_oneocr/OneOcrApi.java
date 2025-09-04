@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.lang.foreign.ValueLayout.*;
+import static xyz.jphil.win11_oneocr.OcrWord.ocrWord;
 
 /**
  * Comprehensive Java FFM binding for Windows 11 SnippingTool OCR (oneocr.dll)
@@ -153,9 +154,34 @@ public class OneOcrApi implements AutoCloseable {
     }
     
     /**
-     * Ensures native libraries are extracted to user home directory.
-     * Uses pattern: <userhome>/xyz-jphil/win11_oneocr/
+     * Get the user directory where OCR natives and configuration data are stored.
+     * This directory is used for extracting native libraries and can be used by tools
+     * for storing execution history and other app configuration or user-specific data.
      * 
+     * @return Path to the Win11 OneOCR app home directory (~/xyz-jphil/win11_oneocr)
+     */
+    public static Path getAppHome(){
+        Path appHome = null;
+        try {
+            appHome = getAppHome(false);
+        } catch (Exception e) {
+            // will never happen
+        }
+        return appHome;
+    }
+    
+    public static Path getAppHome(boolean createIfNotExists) throws IOException {
+        var userHome = Paths.get(System.getProperty("user.home"));
+        var apphome = userHome.resolve("xyz-jphil").resolve("win11_oneocr");
+        // Create directory if it doesn't exist
+        if (!Files.exists(apphome)) {
+            Files.createDirectories(apphome);
+        }
+        return apphome;
+    }
+
+    /**
+     * Ensures native libraries are extracted to app home directory.
      * Logic:
      * 1. Check if DLLs exist in extraction directory
      * 2. If not, extract from JAR resources or copy from development classpath
@@ -163,13 +189,7 @@ public class OneOcrApi implements AutoCloseable {
      */
     private Path ensureNativesExtracted() throws IOException {
         // Target extraction directory
-        Path userHome = Paths.get(System.getProperty("user.home"));
-        Path extractDir = userHome.resolve("xyz-jphil").resolve("win11_oneocr");
-        
-        // Create directory if it doesn't exist
-        if (!Files.exists(extractDir)) {
-            Files.createDirectories(extractDir);
-        }
+        Path extractDir = getAppHome(true);
         
         // Native library files to extract
         String[] nativeFiles = {
@@ -719,7 +739,7 @@ public class OneOcrApi implements AutoCloseable {
             confidence = confidencePtr.get(JAVA_FLOAT, 0);
         }
         
-        return new OcrWord(wordText, wordBBox, confidence);
+        return ocrWord(wordText, wordBBox, confidence);
     }
     
     // JDK21/22+ compatibility methods using cached MethodHandles for performance
