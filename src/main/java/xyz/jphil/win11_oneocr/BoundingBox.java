@@ -23,7 +23,7 @@ public record BoundingBox(
     }
     
     public double[]bounds(){
-        return new double[]{x1,y1,x2,y2,x3,y3,x3,y4};
+        return new double[]{x1,y1,x2,y2,x3,y3,x4,y4};
     }
     
     public record Rectangle(double x, double y, double width, double height) {}
