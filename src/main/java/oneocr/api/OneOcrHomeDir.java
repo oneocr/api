@@ -12,20 +12,10 @@ public class OneOcrHomeDir {
      * This directory is used for extracting native libraries and can be used by tools
      * for storing execution history and other app configuration or user-specific data.
      * 
-     * <p>The directory is {@code ~/oneocr}. Before the move to the oneocr organisation it was
-     * {@code ~/xyz-jphil/win11_oneocr}; when that one exists and the new one does not it is still
-     * used, so an already extracted model and an already downloaded tessdata cache are not orphaned.
-     *
      * @return Path to the OneOCR app home directory (~/oneocr)
      */
     public static Path get(){
-        var userHome = Paths.get(System.getProperty("user.home"));
-        var apphome = userHome.resolve("oneocr");
-        if (!Files.exists(apphome)) {
-            var legacy = userHome.resolve("xyz-jphil").resolve("win11_oneocr");
-            if (Files.isDirectory(legacy)) return legacy;
-        }
-        return apphome;
+        return Paths.get(System.getProperty("user.home")).resolve("oneocr");
     }
     
     public static Path get(boolean createIfNotExists) throws IOException {
