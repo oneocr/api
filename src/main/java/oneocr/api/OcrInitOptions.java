@@ -1,4 +1,4 @@
-package xyz.jphil.win11_oneocr;
+package oneocr.api;
 public class OcrInitOptions implements AutoCloseable {
     private final long handle;
     private final LoadNativeLib lib;

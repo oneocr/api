@@ -1,7 +1,7 @@
-package xyz.jphil.win11_oneocr.test;
+package oneocr.api.test;
 
-import xyz.jphil.win11_oneocr.OneOcrApi;
-import xyz.jphil.win11_oneocr.OneOcrApi;
+import oneocr.api.OneOcrApi;
+import oneocr.api.OneOcrApi;
 
 /**
  * Simple test to verify MethodHandle compatibility between JDK versions

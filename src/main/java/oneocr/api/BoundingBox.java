@@ -1,4 +1,4 @@
-package xyz.jphil.win11_oneocr;
+package oneocr.api;
 
 /**
  * Represents a bounding box with 4 corner coordinates for rotated rectangles

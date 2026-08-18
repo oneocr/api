@@ -1,4 +1,4 @@
-package xyz.jphil.win11_oneocr;
+package oneocr.api;
 
 import java.io.IOException;
 import java.lang.foreign.*;
@@ -6,9 +6,9 @@ import java.lang.invoke.*;
 import java.util.*;
 
 import static java.lang.foreign.ValueLayout.*;
-import static xyz.jphil.win11_oneocr.OneOcrHomeDir.findPath;
-import static xyz.jphil.win11_oneocr.OcrWord.ocrWord;
-import static xyz.jphil.win11_oneocr.Utils.*;
+import static oneocr.api.OneOcrHomeDir.findPath;
+import static oneocr.api.OcrWord.ocrWord;
+import static oneocr.api.Utils.*;
 
 /**
  * Comprehensive Java FFM binding for Windows 11 SnippingTool OCR (oneocr.dll)

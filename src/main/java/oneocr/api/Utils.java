@@ -1,4 +1,4 @@
-package xyz.jphil.win11_oneocr;
+package oneocr.api;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;

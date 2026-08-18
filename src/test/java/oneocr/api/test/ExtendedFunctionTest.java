@@ -1,18 +1,18 @@
-package xyz.jphil.win11_oneocr.test;
+package oneocr.api.test;
 
-import xyz.jphil.win11_oneocr.OcrResult;
-import xyz.jphil.win11_oneocr.OcrWord;
-import xyz.jphil.win11_oneocr.BoundingBox;
-import xyz.jphil.win11_oneocr.OcrLine;
-import xyz.jphil.win11_oneocr.OneOcrApi;
+import oneocr.api.OcrResult;
+import oneocr.api.OcrWord;
+import oneocr.api.BoundingBox;
+import oneocr.api.OcrLine;
+import oneocr.api.OneOcrApi;
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;
-import xyz.jphil.win11_oneocr.BoundingBox;
-import xyz.jphil.win11_oneocr.OcrLine;
-import xyz.jphil.win11_oneocr.OcrResult;
-import xyz.jphil.win11_oneocr.OcrWord;
-import xyz.jphil.win11_oneocr.OneOcrApi;
+import oneocr.api.BoundingBox;
+import oneocr.api.OcrLine;
+import oneocr.api.OcrResult;
+import oneocr.api.OcrWord;
+import oneocr.api.OneOcrApi;
 
 /**
  * Test additional exported DLL functions beyond basic OCR

@@ -1,4 +1,4 @@
-package xyz.jphil.win11_oneocr;
+package oneocr.api;
     
 public class OcrProcessOptions implements AutoCloseable {
     private final long handle;

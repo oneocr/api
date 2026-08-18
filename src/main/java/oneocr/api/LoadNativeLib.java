@@ -1,4 +1,4 @@
-package xyz.jphil.win11_oneocr;
+package oneocr.api;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
@@ -15,7 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
-import static xyz.jphil.win11_oneocr.OneOcrHomeDir.get;
+import static oneocr.api.OneOcrHomeDir.get;
 
 public class LoadNativeLib implements AutoCloseable {
     private final SymbolLookup dll;

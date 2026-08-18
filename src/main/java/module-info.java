@@ -7,7 +7,7 @@
  * 
  * @since 1.0
  */
-module xyz.jphil.win11_oneocr {
+module oneocr.api {
     
     // Core Java modules required for FFM
     requires java.base;
@@ -15,5 +15,5 @@ module xyz.jphil.win11_oneocr {
     requires java.management;  // For memory monitoring in leak detection tests
     
     // Export main API packages
-    exports xyz.jphil.win11_oneocr;
+    exports oneocr.api;
 }

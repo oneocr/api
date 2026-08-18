@@ -1,11 +1,11 @@
-package xyz.jphil.win11_oneocr.test;
+package oneocr.api.test;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;
-import xyz.jphil.win11_oneocr.OcrResult;
-import xyz.jphil.win11_oneocr.OneOcrApi;
+import oneocr.api.OcrResult;
+import oneocr.api.OneOcrApi;
 
 /**
  * Performance benchmark for Java OCR - similar to C++ benchmark_ocr.cpp

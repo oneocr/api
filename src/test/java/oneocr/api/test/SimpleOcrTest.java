@@ -1,11 +1,11 @@
-package xyz.jphil.win11_oneocr.test;
+package oneocr.api.test;
 
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;
-import xyz.jphil.win11_oneocr.OcrLine;
-import xyz.jphil.win11_oneocr.OcrResult;
-import xyz.jphil.win11_oneocr.OneOcrApi;
+import oneocr.api.OcrLine;
+import oneocr.api.OcrResult;
+import oneocr.api.OneOcrApi;
 
 /**
  * Simple test using the cross-JDK compatible OneOcrApi

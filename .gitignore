@@ -109,3 +109,5 @@ src/main/resources/natives/*.dll
 src/main/resources/natives/*.onemodel
 nativelibs/*.dll
 nativelibs/*.onemodel
+# PRPs live in the organisation-level prp folder (C:\user\code\oneocr\prp), out of every repository history
+prp/

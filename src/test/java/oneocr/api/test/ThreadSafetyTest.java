@@ -1,4 +1,4 @@
-package xyz.jphil.win11_oneocr.test;
+package oneocr.api.test;
 
 import java.awt.image.BufferedImage;
 import java.util.concurrent.CountDownLatch;
@@ -7,8 +7,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
-import xyz.jphil.win11_oneocr.OcrResult;
-import xyz.jphil.win11_oneocr.OneOcrApi;
+import oneocr.api.OcrResult;
+import oneocr.api.OneOcrApi;
 
 /**
  * Thread Safety Test for Windows 11 OneOCR Library

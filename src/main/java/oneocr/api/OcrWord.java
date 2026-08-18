@@ -1,4 +1,4 @@
-package xyz.jphil.win11_oneocr;
+package oneocr.api;
 
 /**
  * Represents a recognized word with text, bounding box and confidence

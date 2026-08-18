@@ -1,9 +1,9 @@
-package xyz.jphil.win11_oneocr.test;
+package oneocr.api.test;
 
 import java.awt.image.BufferedImage;
 import java.lang.management.ManagementFactory;
 import javax.imageio.ImageIO;
-import xyz.jphil.win11_oneocr.*;
+import oneocr.api.*;
 
 /**
  * Native Memory Leak Isolation Test

@@ -5,9 +5,9 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     
-    <groupId>io.github.xyz-jphil</groupId>
-    <artifactId>xyz-jphil-win11_oneocr-api</artifactId>
-    <version>1.0</version>
+    <groupId>io.github.oneocr</groupId>
+    <artifactId>oneocr-api</artifactId>
+    <version>2.0</version>
     <packaging>jar</packaging>
     
     <!-- Default properties - JDK22 as primary target -->

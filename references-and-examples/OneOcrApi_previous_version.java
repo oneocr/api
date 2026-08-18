@@ -1,4 +1,4 @@
-package xyz.jphil.win11_oneocr;
+package oneocr.api;
 
 import java.io.IOException;
 import java.lang.foreign.*;
@@ -154,7 +154,7 @@ public class OneOcrApi implements AutoCloseable {
     
     /**
      * Ensures native libraries are extracted to user home directory.
-     * Uses pattern: <userhome>/xyz-jphil/win11_oneocr/
+     * Uses pattern: <userhome>/oneocr/
      * 
      * Logic:
      * 1. Check if DLLs exist in extraction directory

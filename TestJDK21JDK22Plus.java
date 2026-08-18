@@ -236,10 +236,10 @@ class TestJDK21JDK22Plus {
         if (enablePreview) {
             cmd.add("--enable-preview");
         }
-        cmd.add("--enable-native-access=xyz.jphil.win11_oneocr");
+        cmd.add("--enable-native-access=oneocr.api");
         cmd.add("-cp");
         cmd.add("target/classes;target/test-classes");
-        cmd.add("xyz.jphil.win11_oneocr.JavaBenchmark");
+        cmd.add("oneocr.api.JavaBenchmark");
         cmd.add(testImage.toString());
         cmd.add("5");
         

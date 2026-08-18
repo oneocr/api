@@ -19,10 +19,10 @@ mvn clean package -P build-jdk21
 ## Usage (API)
 ```bash
 # JDK 22+
-java --enable-native-access=xyz.jphil.win11_oneocr -jar target/xyz-jphil-win11_oneocr-api-1.0.jar
+java --enable-native-access=oneocr.api -jar target/oneocr-api-2.0.jar
 
 # JDK 21
-java --enable-preview --enable-native-access=xyz.jphil.win11_oneocr -jar target/xyz-jphil-win11_oneocr-api-1.0-jdk21.jar
+java --enable-preview --enable-native-access=oneocr.api -jar target/oneocr-api-1.0-jdk21.jar
 ```
 
 ## Testing
@@ -31,7 +31,7 @@ java --enable-preview --enable-native-access=xyz.jphil.win11_oneocr -jar target/
 java TestJDK21JDK22Plus.java
 
 # Simple test
-java --enable-native-access=xyz.jphil.win11_oneocr -cp "target/classes;target/test-classes" xyz.jphil.win11_oneocr.test.SimpleOcrTest
+java --enable-native-access=oneocr.api -cp "target/classes;target/test-classes" oneocr.api.test.SimpleOcrTest
 ```
 
 ## Native Libraries Setup (Development)
@@ -49,10 +49,10 @@ Copy to `src/main/resources/natives/` folder.
 3. **CRITICAL**: Restore ownership to TrustedInstaller ( **Warning**: Improper ownership changes can break Windows Store apps. See proper reference such as : [WindowsApps Permissions Guide](https://www.winhelponline.com/blog/windowsapps-folder-restore-default-permissions/) )
 
 ## Runtime Behavior
-At runtime, native libraries are automatically extracted to `<userhome>/xyz-jphil/win11_oneocr/` and loaded. Built JARs include all dependencies.
+At runtime, native libraries are automatically extracted to `<userhome>/oneocr/` and loaded. Built JARs include all dependencies.
 
 **Design**: This API module provides portable, bare-minimum OCR functionality for building custom applications. For ready-to-use command-line tools, see the Tools module.
 
 ## Related
-- **Tools**: [xyz-jphil-win11_oneocr-tools](https://github.com/xyz-jphil/xyz-jphil-win11_oneocr-test)
+- **Tools**: [oneocr-cli](https://github.com/oneocr/cli)
 - **Original**: [win11-oneocr](https://github.com/b1tg/win11-oneocr)
