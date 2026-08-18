@@ -46,7 +46,7 @@ public class LoadNativeLib implements AutoCloseable {
     // let each method make their own
     // confined or auto arena and carefully
     // handle clearing their allocations
-    private Arena arena() {
+    Arena arena() {
         return arena;
     }
     
@@ -353,9 +353,14 @@ public class LoadNativeLib implements AutoCloseable {
     Object OcrProcessOptionsSetResizeResolution(long p1, int p2, int p3) throws Throwable {
         return ocrProcessOptionsSetResizeResolution.invoke(p1,p2,p3);
     }
+    
+    
+    int RunOcrPipeline(long pipelineHandle, MemorySegment imageStruct, long optionsHandle, MemorySegment resultPtr) throws Throwable {
+        return (int) runOcrPipeline.invoke(pipelineHandle, imageStruct, optionsHandle, resultPtr);
+    }
 
     void ReleaseOcrInitOptions(long handle) throws Throwable {
-        var voidT = releaseOcrInitOptions.invoke(handle);
+        releaseOcrInitOptions.invoke(handle);
     }
 
     void ReleaseOcrProcessOptions(long handle) throws Throwable {
@@ -366,12 +371,8 @@ public class LoadNativeLib implements AutoCloseable {
         releaseOcrPipeline.invoke(handle);
     }
 
-    int RunOcrPipeline(long pipelineHandle, MemorySegment imageStruct, long optionsHandle, MemorySegment resultPtr) throws Throwable {
-        return (int) runOcrPipeline.invoke(pipelineHandle, imageStruct, optionsHandle, resultPtr);
-    }
-
     void ReleaseOcrResult(long resultHandle) throws Throwable {
-        var voidResult = releaseOcrResult.invoke(resultHandle);
+        releaseOcrResult.invoke(resultHandle);
     }
     
     

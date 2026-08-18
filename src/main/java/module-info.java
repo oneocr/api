@@ -12,6 +12,7 @@ module xyz.jphil.win11_oneocr {
     // Core Java modules required for FFM
     requires java.base;
     requires java.desktop;  // For BufferedImage support in examples/tests
+    requires java.management;  // For memory monitoring in leak detection tests
     
     // Export main API packages
     exports xyz.jphil.win11_oneocr;

@@ -64,9 +64,8 @@ public class OneOcrApi implements AutoCloseable {
         //     )
         //     return init_options
         
-        var tempArena = Arena.ofAuto(); // Method-local arena for temporary allocations
-        try {
-            var handlePtr = tempArena.allocate(JAVA_LONG);
+        try(var localArena = createArena()){
+            var handlePtr = localArena.allocate(JAVA_LONG);
             int result = lib.CreateOcrInitOptions(handlePtr);
             if (result != 0) {
                 throw new RuntimeException("CreateOcrInitOptions failed with code: " + result);
@@ -83,7 +82,7 @@ public class OneOcrApi implements AutoCloseable {
         } catch (Throwable t) {
             throw new RuntimeException("Failed to create OCR init options", t);
         }
-        // tempArena and its allocations become GC-eligible when method returns
+        // localArena and its allocations become GC-eligible when method returns
     }
     
     public OcrPipeline createPipeline(OcrInitOptions initOptions) {
@@ -113,17 +112,16 @@ public class OneOcrApi implements AutoCloseable {
         // 
         // MODEL_KEY = b"kj)TGtrK>f]b[Piow.gU+nC@s\"\"\"\"\"\"4"
         
-        var tempArena = Arena.ofAuto(); // Method-local arena for temporary allocations
-        try {
+        try(var localArena = createArena()){
             // Find model file - look for oneocr.onemodel
             // Model file is now managed by ensureNativesExtracted()
             var modelPath = findPath("oneocr.onemodel")
                 .orElseThrow(()->new RuntimeException("Could not find oneocr.onemodel file"))
                 .toAbsolutePath().toString();
             
-            var modelPathStr = allocateString(tempArena,modelPath);
-            var modelKey = allocateString(tempArena,"kj)TGtrK>f]b[Piow.gU+nC@s\"\"\"\"\"\"4");
-            var pipelinePtr = tempArena.allocate(JAVA_LONG);
+            var modelPathStr = allocateString(localArena,modelPath);
+            var modelKey = allocateString(localArena,"kj)TGtrK>f]b[Piow.gU+nC@s\"\"\"\"\"\"4");
+            var pipelinePtr = localArena.allocate(JAVA_LONG);
             
             int result = lib.CreateOcrPipeline(modelPathStr, modelKey, initOptions.getHandle(), pipelinePtr);
             if (result != 0) {
@@ -173,9 +171,8 @@ public class OneOcrApi implements AutoCloseable {
         // res = OcrProcessOptionsSetMaxRecognitionLineCount(opt, 1000);
         // assert(res == 0);
         
-        var tempArena = Arena.ofAuto(); // Method-local arena for temporary allocations
-        try {
-            var processOptionsPtr = tempArena.allocate(JAVA_LONG);
+        try(var localArena = createArena()){
+            var processOptionsPtr = localArena.allocate(JAVA_LONG);
             int result = lib.CreateOcrProcessOptions(processOptionsPtr);
             if (result != 0) {
                 throw new RuntimeException("CreateOcrProcessOptions failed with code: " + result);
@@ -234,14 +231,13 @@ public class OneOcrApi implements AutoCloseable {
         //         ) != 0:
         //         return self.empty_result
         
-        var tempArena = Arena.ofAuto(); // Method-local arena for temporary allocations
-        try {
+        try(var localArena = createArena()){
             // Create image structure - match C++ Img struct exactly (32 bytes)
-            var imageStruct = tempArena.allocate(32);
+            var imageStruct = localArena.allocate(32);
             
             // Allocate image data
-            var imageDataPtr = tempArena.allocate(imageData.length);
-            // TODO: optimize to avoid copy (might be difficult for now as image is originating in pure java. However it might work had we used nio .... or perhaps they would provide suchs optimization in jdk in future where byte[] are easily mappable to native given developments in proj. amber)
+            var imageDataPtr = localArena.allocate(imageData.length);
+            // BTW this is not a copy but a mapping of jvm array and passing that, so this is efficient!
             MemorySegment.copy(MemorySegment.ofArray(imageData), 0, imageDataPtr, 0, imageData.length);
             
             // Fill image structure
@@ -253,17 +249,31 @@ public class OneOcrApi implements AutoCloseable {
             imageStruct.set(JAVA_LONG, 24, imageDataPtr.address()); // data_ptr as long
             
             // Run OCR - RunOcrPipeline(pipeline, image_struct_ptr, process_options, result_ptr) -> int
-            var resultPtr = tempArena.allocate(JAVA_LONG);
+            var resultPtr = localArena.allocate(JAVA_LONG);
+            System.err.println("DEBUG: About to call RunOcrPipeline...");
             int result = lib.RunOcrPipeline(
                 pipeline.getHandle(), imageStruct, options.getHandle(), resultPtr);
             
             if (result != 0) {
+                System.err.println("DEBUG: RunOcrPipeline FAILED with code=" + result + " (no result handle created)");
                 throw new RuntimeException("RunOcrPipeline failed with code: " + result);
             }
             
             long resultHandle = resultPtr.get(JAVA_LONG, 0);
+            System.err.println("DEBUG: RunOcrPipeline SUCCESS, created resultHandle=0x" + Long.toHexString(resultHandle));
                 
-            return parseOcrResult(resultHandle);
+            OcrResult ocrResult = parseOcrResult(resultHandle);
+            
+            // TEST: Force GC every 10 operations to prevent native memory accumulation
+            // Based on ProgressiveCleanupTest findings - aggressive GC keeps memory stable
+            if (System.currentTimeMillis() % 10 == 0) { // Simple modulo check for testing
+                System.err.println("Forcible GCing");
+                System.gc();
+                System.runFinalization();
+                try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+            }
+            
+            return ocrResult;
             
         } catch (Throwable t) {
             throw new RuntimeException("Failed to recognize image data", t);
@@ -271,25 +281,31 @@ public class OneOcrApi implements AutoCloseable {
     }
     
     private OcrResult parseOcrResult(long resultHandle) {
+        System.err.println("DEBUG: parseOcrResult called with resultHandle=0x" + Long.toHexString(resultHandle));
+        String handleHexVal = Long.toHexString(resultHandle);
         if (resultHandle == 0) {
+            System.err.println("DEBUG: resultHandle is 0, returning empty result (NO ReleaseOcrResult needed)");
             return new OcrResult("", 0.0f, List.of());
         }
-        
-        var tempArena = Arena.ofAuto(); // Method-local arena for temporary allocations
-        try {
+        String fullText;
+        double textAngle = 0.0;
+        var lines = new ArrayList<OcrLine>();
+        try(var localArena = createArena()){
+            System.err.println("DEBUG: Entering try block for resultHandle=0x" + handleHexVal);
             // Get line count using output parameter
-            var lineCountPtr = tempArena.allocate(JAVA_LONG);
+            var lineCountPtr = localArena.allocate(JAVA_LONG);
             int result = lib.GetOcrLineCount(resultHandle, lineCountPtr);
             if (result != 0) {
+                System.err.println("DEBUG: GetOcrLineCount failed with code=" + result + ", returning empty result");
                 return new OcrResult("", 0.0f, List.of());
             }
             int lineCount = (int) lineCountPtr.get(JAVA_LONG, 0);
-            List<OcrLine> lines = new ArrayList<>();
+            
             
             // Get text angle using output parameter
-            double textAngle = 0.0;
+            
             try {
-                var anglePtr = tempArena.allocate(JAVA_FLOAT);
+                var anglePtr = localArena.allocate(JAVA_FLOAT);
                 int angleResult = lib.GetImageAngle(resultHandle, anglePtr);
                 if (angleResult == 0) {
                     textAngle = anglePtr.get(JAVA_FLOAT, 0);
@@ -299,71 +315,82 @@ public class OneOcrApi implements AutoCloseable {
             }
             
             for (int i = 0; i < lineCount; i++) {
-                var lineHandlePtr = tempArena.allocate(JAVA_LONG);
+                var lineHandlePtr = localArena.allocate(JAVA_LONG);
                 int lineResult = lib.GetOcrLine(resultHandle, i, lineHandlePtr);
                 if (lineResult == 0) {
                     long lineHandle = lineHandlePtr.get(JAVA_LONG, 0);
-                    OcrLine line = parseOcrLine(lineHandle);
+                    var line = parseOcrLine(lineHandle);
                     lines.add(line);
                 }
             }
             
             // Combine all line texts
-            var fullText = lines.stream()
+            fullText = lines.stream()
                     .map(OcrLine::text)
                     .reduce((a, b) -> a + "\n" + b)
                     .orElse("");
             
-            return new OcrResult(fullText, textAngle, lines);
+            System.err.println("DEBUG: Normal completionp, parsed " + lineCount + " lines, about to return result");
         } catch (Throwable t) {
+            System.err.println("DEBUG: Exception in parseOcrResult: " + t.getMessage() + ", will call ReleaseOcrResult in finally");
             throw new RuntimeException("Failed to parse OCR result", t);
         } finally {
+            System.err.println("DEBUG: FINALLY BLOCK - Calling ReleaseOcrResult for handle=0x" + handleHexVal);
             try {
                 lib.ReleaseOcrResult(resultHandle);
-            } catch (Throwable ignore) {}
+                System.err.println("DEBUG: ReleaseOcrResult completed successfully for handle=0x" + handleHexVal);
+            } catch (Throwable releaseEx) {
+                System.err.println("DEBUG: ReleaseOcrResult FAILED for handle=0x" + Long.toHexString(resultHandle) + " with exception: " + releaseEx.getMessage());
+            }
         }
+        
+        return new OcrResult(fullText, textAngle, lines);
     }
     
     private OcrLine parseOcrLine(long lineHandle) throws Throwable {
-        var tempArena = Arena.ofAuto(); // Method-local arena for temporary allocations
-        
-        // Get line content using output parameter
-        var contentPtrPtr = tempArena.allocate(ADDRESS);
         var lineText = "";
-        int contentResult = lib.GetOcrLineContent(lineHandle, contentPtrPtr);
-        if (contentResult == 0) {
-            var contentPtr = contentPtrPtr.get(ADDRESS, 0);
-            if (!contentPtr.equals(MemorySegment.NULL)) {
-                lineText = readString(contentPtr.address());
-            }
-        }
-        
-        // Get line bounding box using output parameter  
-        var bboxPtrPtr = tempArena.allocate(ADDRESS);
+        final List<OcrWord> words = new ArrayList<>();
         BoundingBox lineBBox = null;
-        int bboxResult = lib.GetOcrLineBoundingBox(lineHandle, bboxPtrPtr);
-        if (bboxResult == 0) {
-            var bboxPtr = bboxPtrPtr.get(ADDRESS, 0);
-            if (!bboxPtr.equals(MemorySegment.NULL)) {
-                lineBBox = readBoundingBox(bboxPtr.address());
+        
+        try(var localArena = createArena()){
+            // Get line content using output parameter
+            var contentPtrPtr = localArena.allocate(ADDRESS);
+
+            int contentResult = lib.GetOcrLineContent(lineHandle, contentPtrPtr);
+            if (contentResult == 0) {
+                var contentPtr = contentPtrPtr.get(ADDRESS, 0);
+                if (!contentPtr.equals(MemorySegment.NULL)) {
+                    lineText = readString(contentPtr.address());
+                }
             }
-        }
-        
-        // Get words in line using output parameter
-        var wordCountPtr = tempArena.allocate(JAVA_LONG);
-        int wordCountResult = lib.GetOcrLineWordCount(lineHandle, wordCountPtr);
-        List<OcrWord> words = new ArrayList<>();
-        
-        if (wordCountResult == 0) {
-            int wordCount = (int) wordCountPtr.get(JAVA_LONG, 0);
-            
-            for (int j = 0; j < wordCount; j++) {
-                var wordHandlePtr = tempArena.allocate(JAVA_LONG);
-                int wordResult = lib.GetOcrWord(lineHandle, j, wordHandlePtr);
-                if (wordResult == 0) {
-                    long wordHandle = wordHandlePtr.get(JAVA_LONG, 0);
-                    OcrWord word = parseOcrWord(wordHandle);
-                    words.add(word);
+
+            // Get line bounding box using output parameter  
+            var bboxPtrPtr = localArena.allocate(ADDRESS);
+
+            int bboxResult = lib.GetOcrLineBoundingBox(lineHandle, bboxPtrPtr);
+            if (bboxResult == 0) {
+                var bboxPtr = bboxPtrPtr.get(ADDRESS, 0);
+                if (!bboxPtr.equals(MemorySegment.NULL)) {
+                    lineBBox = readBoundingBox(bboxPtr.address());
+                }
+            }
+
+            // Get words in line using output parameter
+            var wordCountPtr = localArena.allocate(JAVA_LONG);
+            int wordCountResult = lib.GetOcrLineWordCount(lineHandle, wordCountPtr);
+
+
+            if (wordCountResult == 0) {
+                int wordCount = (int) wordCountPtr.get(JAVA_LONG, 0);
+
+                for (int j = 0; j < wordCount; j++) {
+                    var wordHandlePtr = localArena.allocate(JAVA_LONG);
+                    int wordResult = lib.GetOcrWord(lineHandle, j, wordHandlePtr);
+                    if (wordResult == 0) {
+                        long wordHandle = wordHandlePtr.get(JAVA_LONG, 0);
+                        OcrWord word = parseOcrWord(wordHandle);
+                        words.add(word);
+                    }
                 }
             }
         }
@@ -372,36 +399,41 @@ public class OneOcrApi implements AutoCloseable {
     }
     
     private OcrWord parseOcrWord(long wordHandle) throws Throwable {
-        var tempArena = Arena.ofAuto(); // Method-local arena for temporary allocations
-        
-        // Get word content using output parameter
-        var contentPtrPtr = tempArena.allocate(ADDRESS);
-        var wordText = "";
-        int contentResult = lib.GetOcrWordContent(wordHandle, contentPtrPtr);
-        if (contentResult == 0) {
-            var contentPtr = contentPtrPtr.get(ADDRESS, 0);
-            if (!contentPtr.equals(MemorySegment.NULL)) {
-                wordText = readString(contentPtr.address());
-            }
-        }
-        
-        // Get word bounding box using output parameter
-        var bboxPtrPtr = tempArena.allocate(ADDRESS);
         BoundingBox wordBBox = null;
-        int bboxResult = lib.GetOcrWordBoundingBox(wordHandle, bboxPtrPtr);
-        if (bboxResult == 0) {
-            var bboxPtr = bboxPtrPtr.get(ADDRESS, 0);
-            if (!bboxPtr.equals(MemorySegment.NULL)) {
-                wordBBox = readBoundingBox(bboxPtr.address());
-            }
-        }
-        
-        // Get confidence using output parameter
-        var confidencePtr = tempArena.allocate(JAVA_FLOAT);
+        var wordText = "";
         double confidence = 0.0;
-        int confidenceResult = lib.GetOcrWordConfidence(wordHandle, confidencePtr);
-        if (confidenceResult == 0) {
-            confidence = confidencePtr.get(JAVA_FLOAT, 0);
+        
+        try(var localArena = createArena()){
+
+            // Get word content using output parameter
+            var contentPtrPtr = localArena.allocate(ADDRESS);
+
+            int contentResult = lib.GetOcrWordContent(wordHandle, contentPtrPtr);
+            if (contentResult == 0) {
+                var contentPtr = contentPtrPtr.get(ADDRESS, 0);
+                if (!contentPtr.equals(MemorySegment.NULL)) {
+                    wordText = readString(contentPtr.address());
+                }
+            }
+
+            // Get word bounding box using output parameter
+            var bboxPtrPtr = localArena.allocate(ADDRESS);
+
+            int bboxResult = lib.GetOcrWordBoundingBox(wordHandle, bboxPtrPtr);
+            if (bboxResult == 0) {
+                var bboxPtr = bboxPtrPtr.get(ADDRESS, 0);
+                if (!bboxPtr.equals(MemorySegment.NULL)) {
+                    wordBBox = readBoundingBox(bboxPtr.address());
+                }
+            }
+
+            // Get confidence using output parameter
+            var confidencePtr = localArena.allocate(JAVA_FLOAT);
+
+            int confidenceResult = lib.GetOcrWordConfidence(wordHandle, confidencePtr);
+            if (confidenceResult == 0) {
+                confidence = confidencePtr.get(JAVA_FLOAT, 0);
+            }
         }
         
         return ocrWord(wordText, wordBBox, confidence);
@@ -428,6 +460,10 @@ public class OneOcrApi implements AutoCloseable {
     @Override
     public void close() {
         lib.close();
+    }
+    
+    public SaferArena createArena(){
+        return SaferArena.Confined.create();
     }
  
 }
