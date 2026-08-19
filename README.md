@@ -1,6 +1,18 @@
-# Windows 11 OneOCR API
+<p align="center">
+  <a href="https://oneocr.github.io/"><img src="https://oneocr.github.io/assets/mark.svg" width="76" height="76" alt="oneocr"></a>
+</p>
 
-Java FFM (Foreign Function & Memory API) wrapper for Windows 11 SnippingTool OCR engine.
+<h1 align="center">oneocr-api</h1>
+
+<p align="center">The Java FFM binding to the OCR engine built into the Windows 11 Snipping Tool. No JNI, nothing to compile.</p>
+
+<p align="center">
+  <a href="https://oneocr.github.io/">Website</a> ·
+  <a href="https://github.com/oneocr">All repositories</a> ·
+  <a href="https://oneocr.github.io/demo/sample-page.oneocr.xhtml">Live output</a>
+</p>
+
+---
 
 ## Requirements
 - **JDK 22+** (recommended - FFM is final, no preview flags needed)
