@@ -201,6 +201,20 @@ public class OneOcrApi implements AutoCloseable {
      * @return OCR result with text, angle and bounding boxes
      */
     public OcrResult recognizeImage(OcrPipeline pipeline, OcrProcessOptions options, int width, int height, byte[] imageData) {
+        return recognize(pipeline, options, width, height, MemorySegment.ofArray(imageData), false);
+    }
+
+    /**
+     * Same, from the page raster as it is: one int per pixel, 0xAARRGGBB, which in little-endian memory
+     * is exactly the BGRA byte order the DLL wants. Skips the 4 bytes-per-pixel Java array a caller would
+     * otherwise build first (35 MB for an A4 page at 300 DPI); the pixels go straight into native memory.
+     * The alpha byte is forced opaque, as {@code BufferedImage.getRGB} does for RGB images.
+     */
+    public OcrResult recognizeImage(OcrPipeline pipeline, OcrProcessOptions options, int width, int height, int[] argb) {
+        return recognize(pipeline, options, width, height, MemorySegment.ofArray(argb), true);
+    }
+
+    private OcrResult recognize(OcrPipeline pipeline, OcrProcessOptions options, int width, int height, MemorySegment pixels, boolean forceOpaque) {
         // Python reference (oneocr_reference.py):
         // def _process_image(self, cols, rows, step, data):
         //     '''Create image structure'''
@@ -236,9 +250,9 @@ public class OneOcrApi implements AutoCloseable {
             var imageStruct = localArena.allocate(32);
             
             // Allocate image data
-            var imageDataPtr = localArena.allocate(imageData.length);
-            // BTW this is not a copy but a mapping of jvm array and passing that, so this is efficient!
-            MemorySegment.copy(MemorySegment.ofArray(imageData), 0, imageDataPtr, 0, imageData.length);
+            var imageDataPtr = localArena.allocate(pixels.byteSize());
+            MemorySegment.copy(pixels, 0, imageDataPtr, 0, pixels.byteSize());
+            if (forceOpaque) for (var o = 3L; o < pixels.byteSize(); o += 4) imageDataPtr.set(JAVA_BYTE, o, (byte) 0xFF);
             
             // Fill image structure
             imageStruct.set(JAVA_INT, 0, 3);                   // CV_8UC4
@@ -264,15 +278,10 @@ public class OneOcrApi implements AutoCloseable {
                 
             OcrResult ocrResult = parseOcrResult(resultHandle);
             
-            // TEST: Force GC every 10 operations to prevent native memory accumulation
-            // Based on ProgressiveCleanupTest findings - aggressive GC keeps memory stable
-            if (System.currentTimeMillis() % 10 == 0) { // Simple modulo check for testing
-                System.err.println("Forcible GCing");
-                System.gc();
-                System.runFinalization();
-                try { Thread.sleep(50); } catch (InterruptedException ignored) {}
-            }
-            
+            // Removed (PRP 28): a "TEST" block here forced System.gc() + runFinalization() + a 50 ms
+            // sleep on about 1 call in 10, to hide memory that was really held by PDFBox's soft-reference
+            // resource cache in the caller. The arena above is closed deterministically; nothing here
+            // needs the collector's help.
             return ocrResult;
             
         } catch (Throwable t) {

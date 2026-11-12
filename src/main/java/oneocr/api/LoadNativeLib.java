@@ -143,11 +143,17 @@ public class LoadNativeLib implements AutoCloseable {
                         } else {
                             // Optional files (like opencv) might not exist
                             if (fileName.equals("oneocr.dll") || fileName.equals("oneocr.onemodel")) {
-                                throw new IOException("Required native file not found: " + fileName);
+                                // A released 1ocr does not carry Microsoft's files (they cannot be redistributed),
+                                // so a machine that never had them lands here: say where they come from.
+                                throw new IOException("Required native file not found: " + fileName + " (looked in "
+                                    + extractDir + "). Copy oneocr.dll, oneocr.onemodel, onnxruntime.dll and"
+                                    + " opencv_world4120.dll from this PC's own Snipping Tool, the folder"
+                                    + " C:\\Program Files\\WindowsApps\\Microsoft.ScreenSketch_*\\SnippingTool, into that folder.");
                             }
                         }
                     }
                 } catch (IOException e) {
+                    if (e.getMessage() != null && e.getMessage().startsWith("Required native file not found")) throw e;
                     if (fileName.equals("oneocr.dll") || fileName.equals("oneocr.onemodel")) {
                         throw new IOException("Failed to extract required native file: " + fileName, e);
                     }
